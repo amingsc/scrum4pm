@@ -1,9 +1,14 @@
 {% extends "layout.html" %}
 {% block title %}用户故事{% endblock %}
 {% block content %}
-  <h1>用户故事</h1>
+  <h1>用户故事
+    <div class="uk-button-group uk-float-right">
+      <button class="uk-button uk-button-large uk-button-primary" data-uk-button onclick="switch_of_editable();">编辑</button>
+      <button class="uk-button uk-button-large uk-button-danger">保存</button>
+    </div>
+  </h1>
 
-  <div>
+  <div class="uk-overflow-container">
     <ul class="uk-list uk-list-line">
       {# project header #}
       <div class="uk-grid">
@@ -12,7 +17,8 @@
         <div class="uk-width-4-10"><strong>项目名称</strong></div>
       </div>
 
-      {% for p in data.project %}
+
+      {% for p in data.project %}{% set project_loop_index=loop.index %}
         <li class="project-row">
           {# project row #}
           <div class="uk-grid">
@@ -24,103 +30,284 @@
             <div class="uk-width-4-10">{{p.name}}</div>
           </div>
 
-          {# userstory list #}
+          <!--标题行：userstory+backlog-->
           <ul class="uk-list uk-list-striped">
-            {% for u in data.userstory %}
-            {% if u.project_id==p.id %}
-            <li class="us-row" project="{{p.id}}" usid="{{u.id}}">
+            <li class="uk-padding-top-remove uk-padding-bottom-remove">
               <div class="uk-grid">
-                <div class="uk-width-5-10">{{u.name}}</div>
-                <div class="uk-width-1-10">{{u.status}}</div>
-                <div class="uk-width-1-10">{{u.priority}}</div>
-                <div class="uk-width-2-10">
-                  <a href="#" onclick="userstory_delete(this);">删除</a>
-                  <a href="#" onclick="userstory_edit(this);">编辑</a>
-                  <a href="#" onclick="userstory_insert(this);">插入</a>
+                <!--Left panel: header-->
+                <div class="uk-width-6-10 uk-grid">
+                  <div class="uk-width-5-10"><small><em>用户故事名称</em></small></div>
+                  <div class="uk-width-2-10"><small><em>状态</em></small></div>
+                  <div class="uk-width-2-10"><small><em>优先级</em></small></div>
+                  <div class="uk-width-1-10"></div>
                 </div>
+                <!--Right Panel: header-->
+                <div class="uk-width-4-10 uk-grid">
+                  <div class="uk-width-5-10"><small><em>Backlog名称</em></small></div>
+                  <div class="uk-width-2-10"><small><em>状态</em></small></div>
+                  <div class="uk-width-2-10"><small><em>优先级</em></small></div>
+                </div>
+
+              </div>
+            </li>
+
+            {# userstory list #}
+            {% for u in data.userstory %}{% set us_loop_index=loop.index %}
+            {% if u.project_id==p.id or (u.id<0 and project_loop_index==1) %}
+            <li class="us-row {%if u.id<0%}us-row-frame uk-hidden{%endif%}" project="{{p.id}}" usid="{{u.id}}">
+              <div class="uk-grid">
+
+                <!--Left Panel: userstory data-->
+                <div class="uk-width-6-10 uk-grid">
+                  <!--名称列-->
+                  <div class="uk-width-5-10">
+                    <span class="us-field-show us-name"><a href="" class="uk-icon-file-photo-o"></a>{{u.name}}</span>
+                    <textarea class="us-field-edit us-name uk-hidden uk-width-1-1 uk-form-blank" rows="1" cols="" placeholder="对于用户故事的描述">{{u.name}}</textarea>
+                  </div>
+                  <!--状态列-->
+                  <div class="uk-width-2-10">
+                    <span class="us-field-show us-status">{{u.status}}</span>
+                    <div class="us-field-edit us-status uk-hidden uk-form-select" data-uk-form-select="{target:'a'}"><a></a>
+                      <select autocomplete="off">
+                        <option {%if u.status=="正常"%}selected="selected"{%endif%}>正常</option>
+                        <option {%if u.status=="暂停"%}selected="selected"{%endif%}>暂停</option>
+                        <option {%if u.status=="关闭"%}selected="selected"{%endif%}>关闭</option>
+                        <option {%if u.status=="取消"%}selected="selected"{%endif%}>取消</option>
+                      </select>
+                    </div>
+                  </div>
+                  <!--优先级列-->
+                  <div class="uk-width-2-10">
+                    <span class="us-field-show us-priority">{{u.priority}}</span>
+                    <div class="us-field-edit us-priority uk-hidden uk-form-select" data-uk-form-select="{target:'a'}"><a></a>
+                      <select autocomplete="off">
+                        <option {%if u.priority=="低"%}selected="selected"{%endif%}>低</option>
+                        <option {%if u.priority=="一般"%}selected="selected"{%endif%}>一般</option>
+                        <option {%if u.priority=="高"%}selected="selected"{%endif%}>高</option>
+                        <option {%if u.priority=="紧急"%}selected="selected"{%endif%}>紧急</option>
+                      </select>
+                    </div>
+                  </div>
+                  <!--操作按钮列: 下拉菜单-->
+                  <div class="uk-width-1-10 us-field-edit uk-hidden">
+                    <div class="uk-button-dropdown" data-uk-dropdown="{mode:'click'}" aria-haspopup="true" aria-expanded="false">
+                      <a href=""><i class="uk-icon-caret-down"></i></a>
+                      <div class="uk-dropdown uk-dropdown-small" style="">
+                        <ul class="uk-nav uk-nav-dropdown">
+                          <li>
+                            <a href="#" onclick="userstory_delete(this);">删除</a>
+                            <a href="#" onclick="userstory_insert(this);">插入</a>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!--Right Panel: backlog data-->
+                <div class="uk-width-4-10">
+                  <ul class="uk-list uk-list-line">
+                  {% for b in data.backlog %}
+                  {% if b.userstory_id==u.id or (u.id<0 and project_loop_index==1 and us_loop_index==1)  %}
+                  <li class="bl-row {%if b.id<0%}bl-row-frame uk-hidden{%endif%}" project="{{b.id}}" usid="{{u.id}}" blid="{{b.id}}">
+                    <div class="uk-grid">
+                      <!--名称列-->
+                      <div class="uk-width-5-10">
+                        <span class="us-field-show bl-name"><a href="" class="uk-icon-mobile"></a>{{b.name}}</span>
+                        <textarea class="us-field-edit bl-name uk-hidden uk-width-1-1 uk-form-blank" rows="1" cols="" placeholder="对于backlog的描述">{{b.name}}</textarea>
+                      </div>
+                      <!--优先级列-->
+                      <div class="uk-width-2-10">
+                        <span class="us-field-show bl-priority">{{b.priority}}</span>
+                        <div class="us-field-edit bl-priority uk-hidden uk-form-select" data-uk-form-select="{target:'a'}"><a></a>
+                          <select autocomplete="off">
+                            <option {%if b.priority=="低"%}selected="selected"{%endif%}>低</option>
+                            <option {%if b.priority=="一般"%}selected="selected"{%endif%}>一般</option>
+                            <option {%if b.priority=="高"%}selected="selected"{%endif%}>高</option>
+                            <option {%if b.priority=="紧急"%}selected="selected"{%endif%}>紧急</option>
+                          </select>
+                        </div>
+                      </div>
+                      <!--进度列-->
+                      <div class="uk-width-2-10">
+                        <span class="us-field-show bl-progress">{{b.progress}}</span>
+                        <div class="us-field-edit bl-progress uk-hidden uk-form-select" data-uk-form-select="{target:'a'}"><a></a>
+                          <select autocomplete="off">
+                            <option {%if b.progress=="未开始"%}selected="selected"{%endif%}>未开始</option>
+                            <option {%if b.progress=="10%"%}selected="selected"{%endif%}>10%</option>
+                            <option {%if b.progress=="30%"%}selected="selected"{%endif%}>30%</option>
+                            <option {%if b.progress=="50%"%}selected="selected"{%endif%}>50%</option>
+                            <option {%if b.progress=="70%"%}selected="selected"{%endif%}>70%</option>
+                            <option {%if b.progress=="90%"%}selected="selected"{%endif%}>90%</option>
+                            <option {%if b.progress=="取消"%}selected="selected"{%endif%}>取消</option>
+                            <option {%if b.progress=="完成"%}selected="selected"{%endif%}>完成</option>
+                          </select>
+                        </div>
+                      </div>
+                      <!--操作按钮列: 下拉菜单-->
+                      <div class="uk-width-1-10 us-field-edit uk-hidden">
+                        <div class="uk-button-dropdown" data-uk-dropdown="{mode:'click'}" aria-haspopup="true" aria-expanded="false">
+                          <a href=""><i class="uk-icon-caret-down"></i></a>
+                          <div class="uk-dropdown uk-dropdown-small" style="">
+                            <ul class="uk-nav uk-nav-dropdown">
+                              <li>
+                                <a href="#" onclick="backlog_delete(this);">删除</a>
+                                <a href="#" onclick="backlog_insert(this);">插入</a>
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div> <!--end right panel-->
+                  </li>
+                  {% endif %}
+                  {% endfor %}
+                </ul>
+              </div>
               </div>
             </li>
             {% endif %}
             {% endfor %}
 
-
           </ul>
-
-
 
         </li>
       {% endfor %}
 
-
-      {# 整个页面只有一个edit面板，当哪里需要的时候就搬迁过去并适当初始化 #}
-      <li id="us-edit-panel" class="uk-hidden">
-        <div class="uk-grid data-uk-grid-match">
-          <input id="project_id" class="us-input uk-hidden" value="" />
-          <div class="uk-width-5-10">
-            <textarea id="name" class="us-input" rows="" cols=""></textarea>
-          </div>
-          <div class="uk-width-1-10">
-            <select id="status" class="us-input"><option>正常</option><option>挂起</option><option>取消</option></select>
-          </div>
-          <div class="uk-width-1-10 uk-form-controls">
-            <select id="priority" class="us-input"><option>低</option><option>一般</option><option>高</option><option>紧急</option></select>
-          </div>
-          <div class="uk-width-2-10">
-            <a href="#" onclick="userstory_insert_save(this);">保存</a>
-          </div>
-        </div>
-      </li>
     </ul>
   </div>
 
 <script type="text/javascript">
-function userstory_insert(element){
-  //init data
-  var target_us_row = $(element).closest("li.us-row");
-  var us_editor = $('li#us-edit-panel');
-  var project_id = $(target_us_row).attr("project");
-  $(us_editor).find("#project_id.us-input").attr("value", project_id);
-  //move us editor to right position
-  $(us_editor).detach();
-  $(us_editor).insertAfter($(target_us_row));
-  $(us_editor).removeClass("uk-hidden");
+/** 初始化页面*/
+var g_editable = 0; //默认不可编辑
+var g_uknotifycfg_status_default = "info";
+var g_uknotifycfg_pos_default = "top-right";
+var g_uknotifycfg_timeout_default = 5000;
+
+$(document).ready(function(){
+});
+
+/* 生成Uikit-notify配置参数*/
+function uknotifycfg(status=null){
+  var cfg = {"status": g_uknotifycfg_status_default,
+            "pos": g_uknotifycfg_pos_default,
+            "timeout": g_uknotifycfg_timeout_default};
+  if(status){
+    cfg.status = status
+  }
+  if(status=="danger"){
+    cfg.timeout = 0;
+  }
+  return cfg;
 }
 
-function userstory_edit(element){
-  var name = $(element).text();
-  alert(name);
+/** 切换普通与编辑状态*/
+function switch_of_editable(){
+  if(g_editable>0){
+    $(".us-field-show").each(function(index){
+      $(this).addClass("uk-hidden");
+    });
+    $(".us-field-edit").each(function(index){
+      $(this).removeClass("uk-hidden");
+    });
+  }else{
+    $(".us-field-show").each(function(index){
+      $(this).removeClass("uk-hidden");
+    });
+    $(".us-field-edit").each(function(index){
+      $(this).addClass("uk-hidden");
+    });
+  }
+  g_editable = 1 - g_editable;
+}
+
+
+/** 初始化us编辑界面*/
+function userstory_insert(element){
+  var target_us_row = $(element).closest("li.us-row");
+  var us_row_frame = $('li.us-row-frame').clone(
+        withDataAndEvents=true,
+        deepWithDataAndEvents=true);
+  var project_id = $(target_us_row).attr("project");
+  $(us_row_frame).attr("project", project_id);
+  $(us_row_frame).attr("usid", "");
+  $(us_row_frame).insertAfter($(target_us_row));
+  $(us_row_frame).removeClass("uk-hidden us-row-frame");
+}
+/** 初始化backlog编辑界面*/
+function backlog_insert(element){
+  var target_bl_row = $(element).closest("li.bl-row");
+  var bl_row_frame = $('li.bl-row-frame').clone(
+        withDataAndEvents=true,
+        deepWithDataAndEvents=true);
+  $(bl_row_frame).attr("project", $(target_bl_row).attr("project"));
+  $(bl_row_frame).attr("usid", $(target_bl_row).attr("usid"));
+  $(bl_row_frame).attr("blid", "");
+  $(bl_row_frame).insertAfter($(target_bl_row));
+  $(bl_row_frame).removeClass("uk-hidden bl-row-frame");
 }
 
 /*删除特定的用户故事*/
 function userstory_delete(element){
-  var usid = $(element).closest("li.us-row").attr("usid");
-  
+  var target_us_row = $(element).closest("li.us-row");
+  var userstory_id = $(target_us_row).attr("usid");
+
+  //TODO: 检查backlogs是否为空
+
   //ajax to delete selected us
   $.ajax({
     url: "{{url_for('ajax_delete_us')}}",
     type: 'POST',
     dataType: 'json',
-    data: {"usid": usid},
+    data: {"usid": userstory_id},
     async: false,
     cache: false,
     success: function(result) {
       if(result.code==0){
         //alert('提交成功,rowid=' + result.rowid);
+        UIkit.notify("<i class='uk-icon-check-circle'></i> 删除成功!", uknotifycfg("danger"));
         window.location.href="{{url_for('list_userstory')}}";
       }else{
-        alert('提交失败,error="' + result.message + '"');
+        UIkit.notify("<i class='uk-icon-times-circle'></i> 删除失败，错误消息："+result.message+"!", uknotifycfg("danger"));
       }
     }
   });
 }
 
-/* Save the new added us by AJAX */
-function userstory_insert_save(element){
+/*删除特定的backlog*/
+function backlog_delete(element){
+  var target_bl_row = $(element).closest("li.bl-row");
+  var backlog_id = $(target_bl_row).attr("blid");
+
+  //ajax submit
+  $.ajax({
+    url: "{{url_for('ajax_delete_backlog')}}",
+    type: 'POST',
+    dataType: 'json',
+    data: {"blid": backlog_id},
+    async: false,
+    cache: false,
+    success: function(result) {
+      if(result.code==0){
+        UIkit.notify("<i class='uk-icon-check-circle'></i> 删除成功!", uknotifycfg("danger"));
+        window.location.href="{{url_for('list_userstory')}}";
+      }else{
+        UIkit.notify("<i class='uk-icon-times-circle'></i> 删除失败，错误消息："+result.message+"!", uknotifycfg("danger"));
+      }
+    }
+  });
+}
+
+/* Save the new added or updated us by AJAX */
+function userstory_edit_save(element){
   //get inputed fields
+  var project_id = $('#project_id.us-input').attr('value');
+  var userstory_id = $('#userstory_id.us-input').attr('value');
   var name = $('#name.us-input').val();
   var status = $('#status.us-input').val();
   var priority = $('#priority.us-input').val();
-  var project_id = $('#project_id.us-input').attr('value');
 
   //check if input is valid
   if(name.length==0){
@@ -130,12 +317,13 @@ function userstory_insert_save(element){
   var data = {'name': name,
               'status': status,
               'priority': priority,
-              'project_id': project_id};
+              'project_id': project_id,
+              "userstory_id": userstory_id};
   console.info(data);
 
   //ajax to save new us
   $.ajax({
-    url: "{{url_for('ajax_add_new_us')}}",
+    url: "{{url_for('ajax_edit_us')}}",
     type: 'POST',
     dataType: 'json',
     data: data,
@@ -151,6 +339,13 @@ function userstory_insert_save(element){
     }
   });
 }
+
+/* cancel userstory edit */
+function userstory_edit_cancel(element){
+  var us_editor = $(element).closest('li#us-edit-panel');
+  $(us_editor).addClass("uk-hidden");
+}
+
 </script>
 
 {% endblock %}
