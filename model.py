@@ -9,7 +9,8 @@ methods for operate database.
 import datetime
 import sqlite3
 
-DBFILE = 'data_dev.sqlite'  # under current directory
+#DBFILE = 'data_dev.sqlite'
+DBFILE = 'data_prod.sqlite'  # under current directory
 
 
 def _dict_factory(cursor, row):
@@ -24,7 +25,7 @@ def get_project():
     conn = sqlite3.connect(DBFILE)
     conn.row_factory = _dict_factory
     cursor = conn.cursor()
-    sql = """SELECT id, name, status, category FROM project"""
+    sql = "SELECT id, name, status, category FROM project"
     cursor.execute(sql)
     result = cursor.fetchall()
     return result
@@ -157,14 +158,28 @@ def get_backlog(with_frame=False):
 
 def update_subtask(subtask_id, data):
     '更新子任务进度'
-    conn = sqlite3.connect(DBFILE)
-    cursor = conn.cursor()
-    sql = """UPDATE backlog SET progress=? WHERE id=?"""
-    cursor.execute(sql, (data['progress'], subtask_id))
-    rows = conn.total_changes
-    conn.commit()
-    conn.close()
-    return rows
+    try:
+        conn = sqlite3.connect(DBFILE)
+        cursor = conn.cursor()
+
+        # 更新进度
+        sql = "UPDATE backlog SET progress=? WHERE id=?"
+        cursor.execute(sql, (data['progress'], subtask_id))
+        rows = conn.total_changes
+
+        # 记录进度的snapshot
+        sql = "INSERT INTO backlog_snapshot(backlog_id, progress, create_time)" \
+                " VALUES(?,?,?)"
+        cursor.execute(sql, (subtask_id, data['progress'], \
+                datetime.datetime.now().strftime('%Y-%m-%d %H:%m:%S')))
+
+        conn.commit()
+        conn.close()
+        return rows
+    except:
+        cursor.rollback()
+        conn.close()
+        raise
 
 def get_review_list(days_limit=7, plan_limit=1):
     '查询最近的review记录'
@@ -214,6 +229,39 @@ def update_review(data):
         cursor.rollback()
         conn.close()
 
-
 def get_today():
+    '返回今天的日期字符串，如2015-10-17'
     return datetime.date.today().strftime('%Y-%m-%d')
+
+def review_generate_workdone(today):
+    '自动生成今日工作内容'
+    print 'DEBUG: today=', today
+    sql = """SELECT u.name AS us_name, c.id, c.name, a.progress AS today_progress,
+                ifnull(b.progress,0) AS last_progress FROM
+            (SELECT id,backlog_id,progress,max(create_time)
+                FROM backlog_snapshot
+                WHERE create_time LIKE '%s %%'
+                GROUP BY backlog_id) a
+            LEFT JOIN
+            (SELECT id,backlog_id,progress,max(create_time)
+                FROM backlog_snapshot
+                WHERE create_time NOT LIKE '%s %%'
+                GROUP BY backlog_id) b
+            ON a.backlog_id=b.backlog_id
+            JOIN backlog c ON c.id=a.backlog_id
+            JOIN userstory u ON u.id=c.userstory_id""" % (today, today)
+    print 'DEBUG: sql=', sql
+    conn = sqlite3.connect(DBFILE)
+    conn.row_factory = _dict_factory
+    cursor = conn.cursor()
+    cursor.execute(sql)
+    res = cursor.fetchall()
+
+    conn.close()
+
+    res = ['[%(us_name)s]%(name)s(%(last_progress)s->%(today_progress)s)' % r for r in res]
+    return '\n'.join(res)
+
+if __name__ == '__main__':
+    res = review_generate_workdone('2015-10-18')
+    print 'RES=',res

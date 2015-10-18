@@ -6,8 +6,8 @@
 
   <h1>每日Review</h1>
 
-  <table class="uk-table uk-table-condensed2 uk-table-striped" border="1">
-    <caption>只显示最近10天</caption>
+  <table class="uk-table uk-table-condensed2 uk-table-striped2" border="1">
+    <caption>下面为最近7天Review记录</caption>
     <thead>
         <tr>
             <th>日期</th>
@@ -21,7 +21,6 @@
       {% set editable=False%}
       {% for r in data.review_list %}
         {% set editable = (editalbe or r.date>=data.today) %}
-        {{editable}}
         {% if editable %}
           <tr class="review-row">
               <td>
@@ -37,10 +36,10 @@
               <td class="uk-padding-remove2">
                 <div class="uk-form-select" data-uk-form-select="{target:'a'}">
                     <a></a>
-                    <select name="quality" class="uk-width-1-1">
-                      <option value="好" {%if r.quality=="好"%}selected{%endif%}>好</option>
-                      <option value="中" {%if r.quality=="中"%}selected{%endif%}>中</option>
-                      <option value="差" {%if r.quality=="差"%}selected{%endif%}>差</option>
+                    <select name="quality" class="uk-width-1-1" autocomplete="off">
+                      <option value="很好" {%if r.quality=="很好"%}selected{%endif%}>很好</option>
+                      <option value="一般" {%if r.quality=="一般" or r.quality==None %}selected{%endif%}>一般</option>
+                      <option value="较差" {%if r.quality=="较差"%}selected{%endif%}>较差</option>
                     </select>
                 </div>
 
@@ -51,7 +50,7 @@
           </tr>
         {% else %}
 
-          <tr>
+          <tr style="background-color: #f5f5f5;">
               <td>
                 <i class="uk-icon-calendar"></i>
                   {{r.date}}
@@ -65,12 +64,14 @@
       {% endfor %}
     </tbody>
   </table>
-  <button class="uk-button uk-button-danger" onclick="OnSaveReview(this);">保存</button>
-
+  <div>
+    <button class="uk-button uk-button-danger" onclick="OnSaveReview(this);">保存</button>
+    <button class="uk-button uk-button-link" onclick="OnGenerateWorkDone(this);">自动生成今日工作内容</button>
+  </div>
 
 <script type="text/javascript">
 
-/* 当点击保存按钮时执行*/
+/* 当点击保存按钮时执行 */
 function OnSaveReview(element){
   var data = new Array();
   $("tr.review-row").each(function(index){
@@ -98,6 +99,34 @@ function OnSaveReview(element){
      }else{
           //response to error
           alert("保存失败，错误原因：" + result["message"]);
+      }
+  }).fail(function(result){
+     //response to fail
+     alert("无法连接服务器，请联系系统管理员");
+  });
+}
+
+/* 当点击‘自动生成今日工作内容’时执行*/
+function OnGenerateWorkDone(element){
+  $.ajax({
+     url: "{{url_for('.ajax_generate_workdone')}}",
+     data: {"today": "{{data.today}}"},
+     type: "POST",
+     dataType: "json",
+     async: false,
+     cache: false
+   }).done(function( result ) {
+     if(result["code"] == 0){
+          var obj_date = $("span[name='date']:contains('{{data.today}}')");
+          if(!obj_date){
+            console.error("未找到正确的date部件");
+            return;
+          }
+          $(obj_date).closest("tr").find("textarea[name='done']").val(result["workdone"]);
+          UIkit.notify("生成成功!", uknotifycfg("success"));
+     }else{
+          //response to error
+          alert("操作失败，错误原因：" + result["message"]);
       }
   }).fail(function(result){
      //response to fail

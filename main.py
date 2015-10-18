@@ -42,6 +42,7 @@ def ajax_task_update():
 
 @app.route('/ajax/taskboard/progress/save/', methods=['POST'])
 def ajax_task_updateprogress():
+    '更新子任务进度'
     try:
         data = {'progress': request.form['progress']}
         subtask_id = request.form['subtask_id']
@@ -71,6 +72,20 @@ def ajax_review_update():
     except Exception as e:
         traceback.print_exc()
         return json.dumps({'code': 1, 'message': e.message})
+
+@app.route('/ajax/review/generate_workdone/', methods=['POST'])
+def ajax_generate_workdone():
+    '自动生成今日工作内容'
+    try:
+        today = request.form['today']
+        res = model.review_generate_workdone(today)
+        return json.dumps({'code': 0, 'workdone': res})
+
+    except Exception as e:
+        traceback.print_exc()
+        return json.dumps({'code': 1, 'message': e.message})
+
+
 
 
 ##################
