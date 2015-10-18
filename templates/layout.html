@@ -9,14 +9,54 @@
     <script src="/static/uikit-2/js/components/form-select.min.js"></script>
     <link rel="stylesheet" href="/static/uikit-2/css/components/notify.min.css" />
     <script src="/static/uikit-2/js/components/notify.min.js"></script>
+    <link rel="stylesheet" href="/static/uikit-2/css/components/sortable.min.css" />
+    <script src="/static/uikit-2/js/components/sortable.min.js"></script>
+    <script type="text/javascript">
+    var g_uknotifycfg_status_default = "info";
+    var g_uknotifycfg_pos_default = "top-right";
+    var g_uknotifycfg_timeout_default = 5000;
+
+    /* 生成Uikit-notify配置参数*/
+    function uknotifycfg(status=null){
+      var cfg = {"status": g_uknotifycfg_status_default,
+                "pos": g_uknotifycfg_pos_default,
+                "timeout": g_uknotifycfg_timeout_default};
+      if(status){
+        cfg.status = status
+      }
+      if(status=="danger"){
+        cfg.timeout = 0;
+      }
+      return cfg;
+    }
+    </script>
   </head>
   <body>
+
+    <!--导航菜单-->
+    <div data-uk-dropdown="" class="uk-button-dropdown uk-align-right uk-margin-right" aria-haspopup="true" aria-expanded="false">
+        <button class="uk-button uk-button-primary uk-button-large uk-margin-large-right uk-margin-top">菜单</button>
+
+        <div class="uk-dropdown uk-dropdown-small uk-dropdown-bottom" style="top: 30px; left: 0px;">
+
+            <ul class="uk-nav uk-nav-dropdown">
+                <li><a href="{{url_for('index')}}">首页</a></li>
+                <li><a href="{{url_for('my_taskboard')}}">任务板</a></li>
+                <li><a href="{{url_for('daily_review')}}">每日Review</a></li>
+                <li><a href="#" class="uk-disabled">问题管理</a></li>
+                <li class="uk-nav-divider"></li>
+                <li><a href="#" class="uk-disabled">我的项目</a></li>
+            </ul>
+
+        </div>
+
+    </div>
 
     <div id="content" class="uk-container uk-container-center">
       {% block content %}{% endblock %}
     </div>
 
-    <div id="footer" class="2uk-position-bottom-right">
+    <div id="footer" class="2uk-position-bottom-right uk-margin-large-top uk-margin-left">
       &copy; Copyright 2015 by <a href="mailto: amingsc@qq.com">amingsc</a>.
     </div>
   </body>

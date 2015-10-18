@@ -1,0 +1,108 @@
+{% extends "layout.html" %}
+{% block title %}每日Review{% endblock %}
+{% block content %}
+  <style>
+  </style>
+
+  <h1>每日Review</h1>
+
+  <table class="uk-table uk-table-condensed2 uk-table-striped" border="1">
+    <caption>只显示最近10天</caption>
+    <thead>
+        <tr>
+            <th>日期</th>
+            <th>计划</th>
+            <th>工作内容</th>
+            <th>执行效果</th>
+            <th>日记</th>
+        </tr>
+    </thead>
+    <tbody>
+      {% set editable=False%}
+      {% for r in data.review_list %}
+        {% set editable = (editalbe or r.date>=data.today) %}
+        {{editable}}
+        {% if editable %}
+          <tr class="review-row">
+              <td>
+                <i class="uk-icon-calendar"></i>
+                <span name="date" class="uk-text-danger uk-text-bold uk-text-large">{{r.date}}</span>
+              </td>
+              <td class="uk-padding-remove">
+                <textarea name="plan" class="uk-width-1-1 uk-form-blank" style="{border:0px;}">{{r.plan if r.plan!=None}}</textarea>
+              </td>
+              <td class="uk-padding-remove">
+                <textarea name="done" class="uk-width-1-1 uk-form-blank">{{r.done if r.done!=None}}</textarea>
+              </td>
+              <td class="uk-padding-remove2">
+                <div class="uk-form-select" data-uk-form-select="{target:'a'}">
+                    <a></a>
+                    <select name="quality" class="uk-width-1-1">
+                      <option value="好" {%if r.quality=="好"%}selected{%endif%}>好</option>
+                      <option value="中" {%if r.quality=="中"%}selected{%endif%}>中</option>
+                      <option value="差" {%if r.quality=="差"%}selected{%endif%}>差</option>
+                    </select>
+                </div>
+
+              </td>
+              <td class="uk-padding-remove">
+                <textarea name="notes" class="uk-width-1-1 uk-form-blank">{{r.notes if r.notes!=None}}</textarea>
+              </td>
+          </tr>
+        {% else %}
+
+          <tr>
+              <td>
+                <i class="uk-icon-calendar"></i>
+                  {{r.date}}
+              </td>
+              <td>{{r.plan if r.plan!=None}}</td>
+              <td>{{r.done if r.done!=None}}</td>
+              <td>{{r.quality if r.quality!=None}}</td>
+              <td>{{r.notes if r.notes!=None}}</td>
+          </tr>
+        {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+  <button class="uk-button uk-button-danger" onclick="OnSaveReview(this);">保存</button>
+
+
+<script type="text/javascript">
+
+/* 当点击保存按钮时执行*/
+function OnSaveReview(element){
+  var data = new Array();
+  $("tr.review-row").each(function(index){
+    var row = {
+      "date": $(this).find("[name='date']").text(),
+      "plan": $(this).find("[name='plan']").val(),
+      "done": $(this).find("[name='done']").val(),
+      "quality": $(this).find("[name='quality']").val(),
+      "notes": $(this).find("[name='notes']").val()
+    };
+    data.push(row);
+  });
+
+  console.log(data);
+  $.ajax({
+     url: "{{url_for('.ajax_review_update')}}",
+     data: {"reviewdata": JSON.stringify(data)},
+     type: "POST",
+     dataType: "json",
+     async: false,
+     cache: false
+   }).done(function( result ) {
+     if(result["code"] == 0){
+          UIkit.notify("保存成功!", uknotifycfg("success"));
+     }else{
+          //response to error
+          alert("保存失败，错误原因：" + result["message"]);
+      }
+  }).fail(function(result){
+     //response to fail
+     alert("无法连接服务器，请联系系统管理员");
+  });
+}
+</script>
+{% endblock %}

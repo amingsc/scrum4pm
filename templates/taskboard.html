@@ -1,0 +1,379 @@
+{% extends "layout.html" %}
+{% block title %}我的任务{% endblock %}
+{% block content %}
+  <style>
+    div.panel-task{
+      background-color: white;
+    }
+
+    li.my-underline{
+      border-bottom: black 1px solid;
+    }
+  </style>
+
+  <h1>我的任务</h1>
+
+  <div class="uk-grid uk-flex">
+    {% for p in data.project %}
+    <!--项目BULK-->
+    <div class="uk-width-1-3 uk-panel uk-panel-box uk-margin-small-left uk-margin-small-right" style="height:600px;">
+      <!--项目标题-->
+      <div class="uk-panel uk-panel-header">
+        <h3 class="uk-panel-title">[{{p.category}}]{{p.name}}
+          <!--右侧操作菜单-->
+          <div class="uk-button-dropdown uk-align-right" data-uk-dropdown="">
+            <button class="uk-button-link"><i class="uk-icon-angle-down"></i></button>
+            <div class="uk-dropdown uk-dropdown-small">
+              <ul class="uk-nav uk-nav-dropdown">
+                <li><a href="javascript: alert('todo');">关闭项目</a></li>
+                <li><a href="javascript: alert('todo');">删除项目</a></li>
+              </ul>
+            </div>
+          </div>
+        </h3>
+
+      </div>
+
+      <!--项目任务列表-->
+      <ul class="project-bulk uk-list uk-sortable" project_id="{{p.id}}" data-uk-sortable="{animation:0}">
+        {% for u in data.userstory if u.project_id==p.id %}
+
+        <!--单个任务面板-->
+        <li>
+          <div class="panel-task uk-panel-box uk-margin-bottom">
+            <!--显示任务-->
+            <div class="uk-grid">
+              <div class="uk-width-1-1">
+                <!--右侧操作菜单-->
+                <div class="uk-button-dropdown uk-align-right" data-uk-dropdown="">
+                  <button class="uk-button-link"><i class="uk-icon-angle-down"></i></button>
+                  <div class="uk-dropdown uk-dropdown-small">
+                    <ul class="uk-nav uk-nav-dropdown">
+                      <li><a href="#" onclick="OnTaskUpdate(this);">修改</a></li>
+                      <li><a href="#" onclick="OnTaskDelete(this);">删除</a></li>
+                    </ul>
+                  </div>
+                </div>
+                <!--任务Name-->
+                <div>
+                  {% if u.priority=='紧急' %}
+                    <div name="task-priority" class="uk-badge uk-badge-danger">{{u.priority}}</div>
+                  {% elif u.priority=='高' %}
+                    <div name="task-priority" class="uk-badge uk-badge-warning">{{u.priority}}</div>
+                  {% elif u.priority=='一般' %}
+                    <div name="task-priority" class="uk-badge uk-badge-notification">{{u.priority}}</div>
+                  {% else %}
+                    <div name="task-priority" class="uk-badge">{{u.priority}}</div>
+                  {% endif %}
+
+                  {% if u.status!='正常' %}
+                    <span>[<span name="task-status">{{u.status}}</span>]</span>
+                  {% else %}
+                    <span class="uk-hidden">[<span name="task-status">{{u.status}}</span>]</span>
+                  {% endif %}
+
+                  <span name="task-id" class="uk-hidden">{{u.id}}</span>
+                  <span name="task-name">{{u.name}}</span>
+
+                </div>
+              </div>
+            </div>
+
+            <!--显示子任务-->
+            <div class="uk-grid uk-margin-top">
+              <div class="uk-width-9-10 uk-align-right">
+                <ul class="subtask-list uk-list" style="font-size:14px;">
+                  {% for b in data.backlog if b.userstory_id==u.id %}
+                  <li class="my-underline">
+                    <i class="uk-icon-genderless uk-margin-small-right"></i>
+                    <span name="subtask-id" class="uk-hidden">{{b.id}}</span>
+                    <span name="subtask-priority" class="uk-badge">{{b.priority}}</span>
+                    <!--<span>[<span name="subtask-status">{{b.status}}</span>]</span>-->
+                    <span name="subtask-name">{{b.name}}</span>
+
+                    <div class="uk-form-select uk-align-right" data-uk-form-select="{target:'a'}"><a></a>
+                      <select autocomplete="off" onchange="OnProgressUpdate(this);" subtask_id="{{b.id}}">
+                        <option {%if b.progress=="未开始"%}selected="selected"{%endif%}>未开始</option>
+                        <option {%if b.progress=="10%"%}selected="selected"{%endif%}>10%</option>
+                        <option {%if b.progress=="20%"%}selected="selected"{%endif%}>20%</option>
+                        <option {%if b.progress=="30%"%}selected="selected"{%endif%}>30%</option>
+                        <option {%if b.progress=="40%"%}selected="selected"{%endif%}>40%</option>
+                        <option {%if b.progress=="50%"%}selected="selected"{%endif%}>50%</option>
+                        <option {%if b.progress=="60%"%}selected="selected"{%endif%}>60%</option>
+                        <option {%if b.progress=="70%"%}selected="selected"{%endif%}>70%</option>
+                        <option {%if b.progress=="80%"%}selected="selected"{%endif%}>80%</option>
+                        <option {%if b.progress=="90%"%}selected="selected"{%endif%}>90%</option>
+                        <option {%if b.progress=="取消"%}selected="selected"{%endif%}>取消</option>
+                        <option {%if b.progress=="完成"%}selected="selected"{%endif%}>完成</option>
+                      </select>
+                    </div>
+
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </li>
+        {% endfor %}
+
+        <!--新建按钮-->
+        <button class="uk-button uk-button-small uk-align-right" onclick="OnAddNewTask(this);">+</button>
+      </ul>
+    </div>
+    {% endfor %}
+
+
+    <!-- task编辑对话框 -->
+    <div id="dialog-task-edit" class="uk-modal">
+      <div class="uk-modal-dialog">
+        <div class="uk-modal-header">
+          <h3 id="task-edit-title"></h3>
+        </div>
+
+        <form class="uk-form uk-form-horizontal">
+          <input type="hidden" name="project-id" value="" />
+          <input type="hidden" name="task-id" value="" />
+
+          <div class="uk-form-row">
+            <label class="uk-form-label" for="">名称</label>
+            <div class="uk-form-controls">
+              <textarea name="task-name" rows="" cols="30">xx</textarea>
+            </div>
+          </div>
+
+          <div class="uk-form-row">
+            <label class="uk-form-label" for="">状态</label>
+            <div class="uk-form-controls">
+              <select name="task-status">
+                <option>正常</option>
+                <option>完成</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="uk-form-row">
+            <label class="uk-form-label" for="">优先级</label>
+            <div class="uk-form-controls">
+              <select name="task-priority">
+                <option>低</option>
+                <option selected="selected">一般</option>
+                <option>高</option>
+                <option>紧急</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="uk-form-row">
+            <label class="uk-form-label" for="">子任务</label>
+            <div class="uk-form-controls">
+            </div>
+          </div>
+        </form>
+
+        <div class="uk-margin-large-left uk-margin-large-right">
+          <ul class="uk-list">
+            <li class="my-underline">
+              <div class="uk-grid">
+                <div class="uk-width-3-5">名称</div>
+                <div class="uk-width-1-5">优先级</div>
+                <div class="uk-width-1-5">操作</div>
+              </div>
+            </li>
+            <li class="subtask-list-template uk-hidden">
+              <input type="hidden" name="staskid" value="" />
+              <div class="uk-grid">
+                <div class="uk-width-3-5">
+                  <input type="text" name="staskname" value="" />
+                </div>
+                <div class="uk-width-1-5">
+                  <select name="staskpriority">
+                    <option value="低">低</option>
+                    <option value="一般">一般</option>
+                    <option value="高">高</option>
+                    <option value="紧急">紧急</option>
+                  </select>
+                </div>
+                <div class="uk-width-1-5">
+                  <button class="uk-button uk-button-link" onclick="OnSubtaskDelete(this);">删除</button>
+                </div>
+              </div>
+            </li>
+          </ul>
+          <ul id="subtask-list" class="uk-list uk-list-line">
+          </ul>
+
+          <button class="uk-button uk-button-link uk-button-mini uk-align-right" onclick="OnAddSubTask(this);">添加子任务</button>
+        </div>
+
+
+        <div class="uk-modal-footer uk-text-center">
+          <button class="uk-button uk-button-danger" onclick="OnSaveTaskEdit();">保存</button>
+          <button class="uk-modal-close uk-button">取消</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+
+
+<script type="text/javascript">
+
+/* 显示新建task对话框*/
+function OnAddNewTask(element){
+  var modal = $("div#dialog-task-edit");
+  var project_id = $(element).closest("ul.project-bulk").attr("project_id");
+  if(!project_id || !modal)return;
+  //初始化对话框
+  modal.find("#task-edit-title").text("新建任务");
+  $(modal).find("[name='project-id']").val(project_id);
+  $(modal).find("[name='task-id']").val("");
+  $(modal).find("textarea[name='task-name']").val("");
+  $(modal).find("select[name='task-priority']").val("一般");
+  $(modal).find("select[name='task-status']").val("正常");
+  $(modal).find("ul#subtask-list").empty();
+  //显示对话框
+  UIkit.modal("div#dialog-task-edit").show(options={"bgclose": false}); // show方法目前尚不支持参数！
+}
+
+/* 显示修改task修改对话框*/
+function OnTaskUpdate(element){
+  var modal = $("div#dialog-task-edit");
+  var taskpanel = $(element).closest("div.panel-task");
+  var project_id = $(element).closest("ul.project-bulk").attr("project_id");
+  if(!project_id || !modal)return;
+  var taskid = $(taskpanel).find("[name='task-id']").text();
+  var taskname = $(taskpanel).find("[name='task-name']").text();
+  var taskstatus = $(taskpanel).find("[name='task-status']").text();
+  var taskpriority = $(taskpanel).find("[name='task-priority']").text();
+
+  //初始化对话框
+  $(modal).find("#task-edit-title").text("修改任务");
+  $(modal).find("[name='project-id']").val(project_id);
+  $(modal).find("[name='task-id']").val(taskid);
+  $(modal).find("textarea[name='task-name']").val(taskname);
+  $(modal).find("select[name='task-status']").val(taskstatus);
+  $(modal).find("select[name='task-priority']").val(taskpriority);
+  var subtask = $(modal).find("ul#subtask-list").empty();
+  $(taskpanel).find("ul.subtask-list>li").each(function(index){
+    var staskid = $(this).find("[name='subtask-id']").text();
+    var staskname = $(this).find("[name='subtask-name']").text();
+    var staskpriority = $(this).find("[name='subtask-priority']").text();
+    var newli = $(modal).find("li.subtask-list-template").clone();
+    $(subtask).append(newli);
+    $(newli).find("input[name='staskid']").val(staskid);
+    $(newli).find("input[name='staskname']").val(staskname);
+    $(newli).find("select[name='staskpriority']").val(staskpriority);
+    $(newli).removeClass("subtask-list-template")
+            .removeClass("uk-hidden")
+            .addClass("subtask-row");
+  });
+
+  //显示对话框
+  UIkit.modal("div#dialog-task-edit").show(options={"bgclose": false}); // show方法目前尚不支持参数！
+}
+
+/* 当点击‘添加子任务’按钮时执行*/
+function OnAddSubTask(element){
+  var modal = $("div#dialog-task-edit");
+  var newli = $(modal).find("li.subtask-list-template").clone();
+  $(modal).find("ul#subtask-list").append(newli);
+  $(newli).removeClass("subtask-list-template")
+          .removeClass("uk-hidden")
+          .addClass("subtask-row");
+}
+
+/* 当点击子任务的”删除“按钮时执行*/
+function OnSubtaskDelete(element){
+  $(element).closest("li.subtask-row")
+            .addClass("uk-hidden")
+            .addClass("subtask-row-deleted");
+}
+
+/* 当点击任务编辑对话框的“保存”按钮*/
+function OnSaveTaskEdit(element){
+  var modal = $("div#dialog-task-edit");
+  //读取任务数据
+  var project_id = $(modal).find("[name='project-id']").val();
+  var id = $(modal).find("[name='task-id']").val();
+  var name = $(modal).find("[name='task-name']").val();
+  var status = $(modal).find("[name='task-status']").val();
+  var priority = $(modal).find("[name='task-priority']").val();
+  if(name=="" || name == null){
+    UIkit.notify("<i class='uk-icon-check-circle'></i> 名称不能为空!", uknotifycfg("warning"));
+    return;
+  }
+  //读取子任务数据
+  var subtask = new Array();
+  $(modal).find("li.subtask-row").each(function(index){
+    var rowdata = {};
+    rowdata["id"] = $(this).find("[name='staskid']").val();
+    rowdata["name"] = $(this).find("[name='staskname']").val();
+    if(rowdata["name"]==""){
+      UIkit.notify("<i class='uk-icon-check-circle'></i> 子任务名称不能为空!", uknotifycfg("warning"));
+      return;
+    }
+    rowdata["priority"] = $(this).find("[name='staskpriority']").val();
+    rowdata["deleted"] = $(this).closest("li.subtask-row").hasClass("subtask-row-deleted");
+    if(rowdata["id"]!="" || rowdata["deleted"]==false){
+      //当id为空、且被标记为删除的时候实际上这条记录尚未保存，因此无需真正提交到后台处理!
+      subtask.push(rowdata);
+    }
+
+  });
+  var data = {"project_id": project_id, "id": id, "name": name, "status": status,
+              "priority": priority, "subtask": JSON.stringify(subtask)};
+  console.log(data);
+
+  //ajax submit
+  $.ajax({
+     url: "{{url_for('.ajax_task_update')}}",
+     data: data,
+     type: "POST",
+     dataType: "json",
+     async: false,
+     cache: false
+   }).done(function( result ) {
+     if(result["code"] == 0){
+          UIkit.notify("保存成功!", uknotifycfg("success"));
+          window.location.href="{{request.url}}";
+     }else{
+          //response to error
+          alert("保存失败，错误原因：" + result["message"]);
+      }
+  }).fail(function(result){
+     //response to fail
+     alert("无法连接服务器，请联系系统管理员");
+  });
+}
+
+/* 当更新进度*/
+function OnProgressUpdate(element){
+  var progress = $(element).val();
+  var subtask_id = $(element).attr("subtask_id");
+
+  console.log(progress);
+  //ajax submit
+  $.ajax({
+     url: "{{url_for('.ajax_task_updateprogress')}}",
+     data: {"progress": progress, "subtask_id": subtask_id},
+     type: "POST",
+     dataType: "json",
+     async: false,
+     cache: false
+   }).done(function( result ) {
+     if(result["code"] == 0){
+          UIkit.notify("保存成功!", uknotifycfg("success"));
+     }else{
+          //response to error
+          alert("保存失败，错误原因：" + result["message"]);
+      }
+  }).fail(function(result){
+     //response to fail
+     alert("无法连接服务器，请联系系统管理员");
+  });
+}
+</script>
+{% endblock %}
